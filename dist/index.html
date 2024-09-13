@@ -140,7 +140,12 @@
 
     <!-- Bảng hiển thị kết quả với tiêu đề cố định -->
     <div x-ref="tableContainer" x-show="!loading" class="overflow-auto max-h-full mb-2 flex-grow">
-      <table class="min-w-full bg-white border-collapse text-sm">
+      <template x-if="paginatedResults.length === 0">
+        <div class="text-center text-gray-500 py-4 border border-dashed border-gray-400 rounded-lg">
+          Không tìm thấy kết quả phù hợp.
+        </div>
+      </template>
+      <table x-show="paginatedResults.length > 0" class="min-w-full bg-white border-collapse text-sm">
         <thead class="bg-gray-200 sticky top-0 z-10">
           <tr class="text-left font-bold">
             <th class="p-1 border border-t-0 whitespace-nowrap">Mã GD</th>
@@ -198,23 +203,27 @@
     function csvSearch() {
       return {
         query: '',
+        minCredit: null,
+        maxCredit: null,
+        sortBy: '',
+        sortDirection: 'asc',
         csvData: [],
         filteredResults: [],
         paginatedResults: [],
         currentPage: 1,
         itemsPerPage: 100,
-        sortBy: '',
-        sortDirection: 'asc',
         loading: false,
         totalCredit: 0,
-        minCredit: null,
-        maxCredit: null,
         filterVisible: true, // Control filter visibility
-
+  
         init() {
+          // Load state from localStorage
+          //this.loadStateFromLocalStorage();
+  
+          // Parse the CSV data
           this.loading = true;
           const csvUrl = 'https://raw.githubusercontent.com/godwork1192/yagi-check-var/main/data/thong_tin_ung_ho_qua_tsk_vcb_0011001932418_tu_01_09_den10_09_2024.csv';
-
+  
           Papa.parse(csvUrl, {
             download: true,
             header: true,
@@ -226,49 +235,72 @@
               this.filteredResults = this.csvData;
               this.calculateTotalCredit();
               this.updatePagination();
+              this.performSearch();
               this.loading = false;
             }
           });
         },
-
+  
+        // Save state to localStorage
+        saveStateToLocalStorage() {
+          localStorage.setItem('query', this.query);
+          localStorage.setItem('minCredit', this.minCredit !== null ? this.minCredit : '');
+          localStorage.setItem('maxCredit', this.maxCredit !== null ? this.maxCredit : '');
+          localStorage.setItem('sortBy', this.sortBy);
+          localStorage.setItem('sortDirection', this.sortDirection);
+          localStorage.setItem('filterVisible', this.filterVisible);
+        },
+  
+        // Load state from localStorage
+        loadStateFromLocalStorage() {
+          this.query = localStorage.getItem('query') || '';
+          this.minCredit = localStorage.getItem('minCredit') ? Number(localStorage.getItem('minCredit')) : null;
+          this.maxCredit = localStorage.getItem('maxCredit') ? Number(localStorage.getItem('maxCredit')) : null;
+          this.sortBy = localStorage.getItem('sortBy') || '';
+          this.sortDirection = localStorage.getItem('sortDirection') || 'asc';
+          this.filterVisible = localStorage.getItem('filterVisible') === 'true' || true;
+        },
+  
+        // Toggle filter visibility and save state
         toggleFilters() {
           this.filterVisible = !this.filterVisible;
+          this.saveStateToLocalStorage();
         },
-
+  
         formatCredit(value) {
           if (!value) return value;
           const number = parseFloat(value.replace(/,/g, ''));  // Xử lý chuỗi số tiền
           return isNaN(number) ? value : new Intl.NumberFormat().format(number);  // Định dạng số với dấu phẩy
         },
-
+  
         highlight(text) {
           if (!this.query) return text;  // Nếu không có từ khóa, trả về văn bản gốc
           const regex = new RegExp(`(${this.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
           return text ? text.replace(regex, '<span class="bg-yellow-200 font-bold">$1</span>') : text;
         },
-
+  
         calculateTotalCredit() {
           this.totalCredit = this.filteredResults.reduce((sum, row) => {
             const value = parseFloat((row['Credit'] ?? '0').replace(/,/g, ''));
             return sum + (isNaN(value) ? 0 : value);
           }, 0).toLocaleString();
         },
-
+  
         get totalPages() {
           return Math.ceil(this.filteredResults.length / this.itemsPerPage);
         },
-
+  
         updatePagination() {
           if (this.sortBy) {
             this.filteredResults.sort((a, b) => {
               let valA = a[this.sortBy] ?? '';
               let valB = b[this.sortBy] ?? '';
-
+  
               if (this.sortBy === 'Credit') {
                 valA = parseFloat((valA ?? '0').replace(/,/g, '')) || 0;
                 valB = parseFloat((valB ?? '0').replace(/,/g, '')) || 0;
               }
-
+  
               return this.sortDirection === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
             });
           }
@@ -276,44 +308,41 @@
           const end = start + this.itemsPerPage;
           this.paginatedResults = this.filteredResults.slice(start, end);
         },
-
+  
         debounceSearch: debounce(function() {
           this.performSearch();
         }, 500),
-
+  
         performSearch() {
           this.loading = true;
           try {
             const lowerQuery = this.query.toLowerCase();
+  
+            // Filter results by searching through all fields in each row
             this.filteredResults = this.csvData.filter(row => {
-              if (!row['Doc No']) {
-                return false;
-              }
               const credit = parseFloat((row['Credit'] ?? '0').replace(/,/g, '')) || 0;
-              // console.log({
-              //   credit,
-              //   minCredit: this.minCredit,
-              //   maxCredit: this.maxCredit,
-              //   lowerQuery: lowerQuery
-              // })
-
-              return (this.minCredit === null || credit >= this.minCredit) && (this.maxCredit === null || credit <= this.maxCredit)
-                && 
-                (
-                    row['Doc No']?.toLowerCase().includes(lowerQuery) ||
-                    row['Transactions in detail']?.toLowerCase().includes(lowerQuery)
-                )
+  
+              // Concatenate all fields into a single string and convert to lowercase
+              const rowText = Object.values(row).join(' ').toLowerCase();
+  
+              // Return rows that match the query in any field and within the credit range
+              return (
+                (this.minCredit === null || credit >= this.minCredit) && 
+                (this.maxCredit === null || credit <= this.maxCredit) && 
+                rowText.includes(lowerQuery)
+              );
             });
-            console.log(this.filteredResults.length)
-
+  
             this.currentPage = 1;
             this.calculateTotalCredit();
             this.updatePagination();
           } finally {
             this.loading = false;
+            // Save state to localStorage after search
+            this.saveStateToLocalStorage();
           }
         },
-
+  
         copyToClipboard(row) {
           const content = `
             Mã GD: ${row['Doc No']}
@@ -329,27 +358,31 @@
             alert("Đã sao chép nội dung!");
           });
         },
-
+  
         nextPage() {
           if (this.currentPage < this.totalPages) {
             this.currentPage++;
             this.updatePagination();
             // Scroll to top when changing pages
-            this.$refs.tableContainer.scrollTop = 0
+            this.$refs.tableContainer.scrollTop = 0;
+            // Save state after pagination change
+            this.saveStateToLocalStorage();
           }
         },
-
+  
         prevPage() {
           if (this.currentPage > 1) {
             this.currentPage--;
             this.updatePagination();
             // Scroll to top when changing pages
-            this.$refs.tableContainer.scrollTop = 0
+            this.$refs.tableContainer.scrollTop = 0;
+            // Save state after pagination change
+            this.saveStateToLocalStorage();
           }
         }
       };
     }
-
+  
     function debounce(func, wait) {
       let timeout;
       return function(...args) {
@@ -358,7 +391,27 @@
         timeout = setTimeout(() => func.apply(context, args), wait);
       };
     }
-  </script>
+  
+    function removeAccents(str) {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+  
+    function fuzzyMatch(query, text) {
+      query = query.toLowerCase();
+      text = text.toLowerCase();
+  
+      // Split both query and text into arrays of words
+      const queryWords = query.split(' ');
+      const textWords = text.split(' ');
+  
+      // Check if every word in the query is found in the text
+      return queryWords.every(word => {
+        return textWords.some(tWord => {
+          return removeAccents(tWord).includes(removeAccents(word));
+        });
+      });
+    }
+  </script>  
 </body>
 
 </html>
