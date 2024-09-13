@@ -72,7 +72,7 @@ pdf(dataBuffer).then(function(data) {
             // Check if the line matches the amount pattern and set the amount
             const parts = line.trim().split(' ');
             if (parts.length > 0) {
-                amount = parts[0].replace('.', '');  // Set the first part as the transaction amount
+                amount = parts[0].replace(/\./g, '');  // Set the first part as the transaction amount
             } else {
                 recordValid = false;  // If no valid amount, mark the record as invalid
             }
