@@ -1,60 +1,102 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CSV Search with Pagination</title>
+  <title>Tìm kiếm Giao dịch</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
 </head>
 
 <body class="bg-gray-100 text-gray-900 min-h-screen w-full h-screen">
-  <div x-data="csvSearch()" x-init="init()" class="container mx-auto mt-10 p-4 h-full flex flex-col">
-    <h1 class="text-3xl font-bold mb-4">Search Transactions</h1>
+  <div x-data="csvSearch()" x-init="init()" class="container mx-auto p-2 h-full flex flex-col">
+    <h1 class="text-2xl font-semibold mb-2">Tìm kiếm Giao dịch</h1>
 
-    <!-- Search input -->
-    <div class="flex space-x-2 mb-4">
-      <input type="text" placeholder="Search by Doc No or Transactions in detail..." x-model="query"
-        class="w-full p-2 border border-gray-300 rounded-lg">
-      <button @click="performSearch" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Search</button>
+    <!-- Khung tìm kiếm và sắp xếp -->
+    <div class="flex space-x-2 mb-2">
+      <input type="text" placeholder="Tìm kiếm theo Mã GD hoặc Nội dung chi tiết..." x-model="query"
+        @input="debounceSearch" class="w-full p-1 border border-gray-300 rounded">
+
+      <!-- Lọc khoảng số tiền -->
+      <input @input="debounceSearch" type="number" placeholder="Số tiền tối thiểu" x-model.number="minCredit" class="p-1 border border-gray-300 rounded w-1/6">
+      <input @input="debounceSearch" type="number" placeholder="Số tiền tối đa" x-model.number="maxCredit" class="p-1 border border-gray-300 rounded w-1/6">
+      
     </div>
 
-    <!-- Table to display results with sticky header -->
+    <!-- Hiển thị khi đang tải dữ liệu -->
+    <div x-show="loading" class="text-center text-gray-500 mb-2">Đang tải dữ liệu...</div>
+
+    <!-- Tổng số tiền giao dịch -->
+    
+    <div class="flex space-x-2 mb-2 justify-between">
+      <div class="mb-2 font-semibold">
+        Tổng số tiền: <span x-text="totalCredit"></span> VND
+      </div>
+      <div class="mb-2 font-semibold">
+        <!-- Chọn sắp xếp -->
+        <select x-model="sortBy" @change="performSearch" class="p-1 border border-gray-300 rounded">
+          <option value="">Sắp xếp theo...</option>
+          <option value="TNX Date">Ngày GD</option>
+          <option value="Credit">Số tiền</option>
+        </select>
+
+        <!-- Chọn thứ tự sắp xếp -->
+        <select x-model="sortDirection" @change="performSearch" class="p-1 border border-gray-300 rounded">
+          <option value="asc">Tăng dần</option>
+          <option value="desc">Giảm dần</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Bảng hiển thị kết quả với tiêu đề cố định -->
     <div class="overflow-auto max-h-full mb-4 flex-grow">
-      <table class="min-w-full bg-white border-collapse">
+      <table class="min-w-full bg-white border-collapse text-sm">
         <thead class="bg-gray-200 sticky top-0 z-10">
           <tr class="text-left font-bold">
-            <th class="p-2 border">TNX Date</th>
-            <th class="p-2 border">Doc No</th>
-            <th class="p-2 border">Credit</th>
-            <th class="p-2 border">Transactions in detail</th>
+            <th class="p-1 border border-t-0 whitespace-nowrap">Mã GD</th>
+            <th class="p-1 border border-t-0 whitespace-nowrap">Ngày GD</th>
+            <th class="p-1 border border-t-0 whitespace-nowrap text-right">Số tiền</th>
+            <th class="p-1 border border-t-0 whitespace-nowrap">Nội dung chi tiết</th>
+            <th class="p-1 border border-t-0 whitespace-nowrap"></th>
           </tr>
         </thead>
         <tbody>
           <template x-for="(row, index) in paginatedResults" :key="index">
             <tr class="hover:bg-gray-100">
-              <td class="p-2 border" x-text="row['TNX Date']"></td>
-              <td class="p-2 border" x-text="row['Doc No']"></td>
-              <td class="p-2 border" x-text="row['Credit']"></td>
-              <td class="p-2 border" x-text="row['Transactions in detail']"></td>
+              <td class="px-1 py-1 border" x-html="highlight(row['Doc No'])"></td>
+              <td class="px-1 py-1 border" x-text="row['TNX Date']"></td>
+              <td class="px-1 py-1 border text-right" x-text="formatCredit(row['Credit'])"></td>
+              <td class="px-1 py-1 border" x-html="highlight(row['Transactions in detail'])"></td>
+              <td class="px-1 py-1 border text-center">
+                <button @click="copyToClipboard(row)" class="bg-blue-500 text-white px-1 py-1 rounded whitespace-nowrap">Sao chép</button>
+              </td>
             </tr>
           </template>
         </tbody>
+        <!-- <thead class="bg-gray-200 sticky bottom-0 z-10"></thead>
+          <tr class="text-left font-bold">
+            <th class="p-1 border border-t-0">Mã GD</th>
+            <th class="p-1 border border-t-0">Ngày GD</th>
+            <th class="p-1 border border-t-0 text-right">Số tiền</th>
+            <th class="p-1 border border-t-0">Nội dung chi tiết</th>
+            <th class="p-1 border border-t-0"></th>
+          </tr>
+        </thead> -->
       </table>
     </div>
 
-    <!-- Pagination controls -->
+    <!-- Điều khiển phân trang -->
     <div class="flex justify-between items-center mt-4">
       <button @click="prevPage" :disabled="currentPage === 1"
-        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg disabled:opacity-50">
-        Previous
+        class="bg-gray-300 text-gray-700 px-2 py-1 rounded-lg disabled:opacity-50">
+        Trang trước
       </button>
-      <span class="text-lg">Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span></span>
+      <span class="text-md">Trang <span x-text="currentPage"></span> / <span x-text="totalPages"></span></span>
       <button @click="nextPage" :disabled="currentPage === totalPages"
-        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg disabled:opacity-50">
-        Next
+        class="bg-gray-300 text-gray-700 px-2 py-1 rounded-lg disabled:opacity-50">
+        Trang sau
       </button>
     </div>
   </div>
@@ -68,12 +110,17 @@
         paginatedResults: [],
         currentPage: 1,
         itemsPerPage: 100,
+        sortBy: '',
+        sortDirection: 'asc',
+        loading: false,
+        totalCredit: 0,
+        minCredit: null,
+        maxCredit: null,
 
         init() {
-          // Hardcoded CSV URL
+          this.loading = true;
           const csvUrl = 'https://raw.githubusercontent.com/godwork1192/yagi-check-var/main/data/thong_tin_ung_ho_qua_tsk_vcb_0011001932418_tu_01_09_den10_09_2024.csv';
 
-          // Load and parse the CSV file
           Papa.parse(csvUrl, {
             download: true,
             header: true,
@@ -81,12 +128,32 @@
               return h.trim();
             },
             complete: (results) => {
-              console.log(results.data)
               this.csvData = results.data;
-              this.filteredResults = this.csvData;  // Initially show full data
-              this.updatePagination();  // Initialize pagination
+              this.filteredResults = this.csvData;
+              this.calculateTotalCredit();
+              this.updatePagination();
+              this.loading = false;
             }
           });
+        },
+
+        formatCredit(value) {
+          if (!value) return value;
+          const number = parseFloat(value.replace(/,/g, ''));  // Xử lý chuỗi số tiền
+          return isNaN(number) ? value : new Intl.NumberFormat().format(number);  // Định dạng số với dấu phẩy
+        },
+
+        highlight(text) {
+          if (!this.query) return text;  // Nếu không có từ khóa, trả về văn bản gốc
+          const regex = new RegExp(`(${this.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+          return text ? text.replace(regex, '<span class="bg-yellow-200 font-bold">$1</span>') : text;
+        },
+
+        calculateTotalCredit() {
+          this.totalCredit = this.csvData.reduce((sum, row) => {
+            const value = parseFloat((row['Credit'] ?? '0').replace(/,/g, ''));
+            return sum + (isNaN(value) ? 0 : value);
+          }, 0).toLocaleString();
         },
 
         get totalPages() {
@@ -94,26 +161,70 @@
         },
 
         updatePagination() {
-          // Update paginated results based on the current page
+          if (this.sortBy) {
+            this.filteredResults.sort((a, b) => {
+              let valA = a[this.sortBy] ?? '';
+              let valB = b[this.sortBy] ?? '';
+
+              if (this.sortBy === 'Credit') {
+                valA = parseFloat((valA ?? '0').replace(/,/g, '')) || 0;
+                valB = parseFloat((valB ?? '0').replace(/,/g, '')) || 0;
+              }
+
+              return this.sortDirection === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+            });
+          }
           const start = (this.currentPage - 1) * this.itemsPerPage;
           const end = start + this.itemsPerPage;
           this.paginatedResults = this.filteredResults.slice(start, end);
         },
 
+        debounceSearch: debounce(function() {
+          this.performSearch();
+        }, 500),
+
         performSearch() {
-          // Filter the data based on the query when the "Search" button is clicked
-          if (this.query === '') {
-            this.filteredResults = this.csvData;  // If query is empty, show all
-          } else {
-            const lowerQuery = this.query.toLowerCase();
-            this.filteredResults = this.csvData.filter(row => {
-              console.log({ row })
-              return row['Doc No'].toLowerCase().includes(lowerQuery) ||
-                row['Transactions in detail'].toLowerCase().includes(lowerQuery);
-            });
-          }
-          this.currentPage = 1;  // Reset to first page after search
-          this.updatePagination();  // Update pagination based on filtered results
+          const lowerQuery = this.query.toLowerCase();
+          this.filteredResults = this.csvData.filter(row => {
+            if (!row['Doc No']) {
+              return false;
+            }
+            const credit = parseFloat((row['Credit'] ?? '0').replace(/,/g, '')) || 0;
+            // console.log({
+            //   credit,
+            //   minCredit: this.minCredit,
+            //   maxCredit: this.maxCredit,
+            //   lowerQuery: lowerQuery
+            // })
+
+            return (this.minCredit === null || credit >= this.minCredit) && (this.maxCredit === null || credit <= this.maxCredit)
+               && 
+              (
+                  row['Doc No']?.toLowerCase().includes(lowerQuery) ||
+                  row['Transactions in detail']?.toLowerCase().includes(lowerQuery)
+              )
+          });
+          console.log(this.filteredResults.length)
+
+          this.currentPage = 1;
+          this.calculateTotalCredit();
+          this.updatePagination();
+        },
+
+        copyToClipboard(row) {
+          const content = `
+            Mã GD: ${row['Doc No']}
+            Ngày GD: ${row['TNX Date']}
+            Số tiền: ${this.formatCredit(row['Credit'])} VNĐ
+            Nội dung chi tiết: ${row['Transactions in detail']}
+          `
+          .split('\n')
+          .map(v => v.trim())
+          .join('\n')
+          .trim();
+          navigator.clipboard.writeText(content).then(() => {
+            alert("Đã sao chép nội dung!");
+          });
         },
 
         nextPage() {
@@ -129,6 +240,15 @@
             this.updatePagination();
           }
         }
+      };
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
       };
     }
   </script>
