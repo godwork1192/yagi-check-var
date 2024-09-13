@@ -4,54 +4,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tìm kiếm Giao dịch</title>
+  <!-- Primary Meta Tags -->
+  <title>Xem file tải về sao kê của Mặt trận Tổ quốc Việt Nam hơn 12.000 trang ủng hộ đồng bào thiệt hại do ảnh hưởng bão số 3 (Yagi)?</title>
+  <meta name="title" content="Xem file tải về sao kê của Mặt trận Tổ quốc Việt Nam hơn 12.000 trang ủng hộ đồng bào thiệt hại do ảnh hưởng bão số 3?" />
+  <meta name="description" content="Xem file tải về sao kê của Mặt trận Tổ quốc Việt Nam hơn 12.000 trang ủng hộ đồng bào thiệt hại do ảnh hưởng bão số 3? Quyền và trách nhiệm của thành viên tổ chức Mặt trận Tổ quốc Việt Nam? 03 nguyên tắc tổ chức và hoạt động của tổ chức Mặt trận Tổ quốc Việt Nam?" />
+
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@heroicons/vue@2.0.17/dist/index.js" defer></script>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WR7JQ5F4');</script>
+  <!-- End Google Tag Manager -->
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VYDY7NGSG0"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-VYDY7NGSG0');
+  </script>
 </head>
 
-<body class="bg-gray-100 text-gray-900 min-h-screen w-full h-screen">
-  <div x-data="csvSearch()" x-init="init()" class="container mx-auto p-2 h-full flex flex-col">
-    <h1 class="text-2xl font-semibold mb-2">Tìm kiếm Giao dịch</h1>
+<body class="bg-gray-100 text-gray-900 w-screen" style="height: 100vh;  max-height: -webkit-fill-available;">
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WR7JQ5F4"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
 
-    <!-- Khung tìm kiếm và sắp xếp -->
-    <div class="flex space-x-2 mb-2">
-      <input type="text" placeholder="Tìm kiếm theo Mã GD hoặc Nội dung chi tiết..." x-model="query"
-        @input="debounceSearch" class="w-full p-1 border border-gray-300 rounded">
+  <div x-data="csvSearch()" x-init="init()" class="container mx-auto p-2 h-full flex flex-col">
+
+    <!-- Nút toggle search filter -->
+    <div class="flex justify-between">
+      <span class="text-2xl font-semibold mb-2">
+        Sao kê Mặt trận Tổ quốc VN
+      </span>
+      <button @click="toggleFilters" class="flex items-center space-x-2">
+        <!-- Heroicon for toggling filter visibility -->
+        <svg :class="filterVisible ? 'h-5 w-5 text-gray-500' : 'h-5 w-5 text-gray-500 transform rotate-180'"
+          xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 10.941l3.7-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0l-4.25-4.25a.75.75 0 01.02-1.06z"
+            clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Khung tìm kiếm và sắp xếp (ẩn/hiện dựa trên toggle) -->
+    <div x-show="filterVisible" class="flex flex-col sm:flex-row sm:space-x-2 mb-2 gap-2">
+      <div class="relative w-full">
+        <input type="text" placeholder="Tìm kiếm theo Mã GD hoặc Nội dung chi tiết..." x-model="query"
+          @input="debounceSearch" class="w-full p-1 pl-10 border border-gray-300 rounded">
+        <!-- Heroicon search icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute top-1/2 left-3 h-5 w-5 transform -translate-y-1/2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <!-- Nút X để xóa nội dung -->
+        <button x-show="query" @click="query = ''; debounceSearch();" class="absolute top-1/2 right-3 h-5 w-5 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <!-- Heroicon X icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
       <!-- Lọc khoảng số tiền -->
-      <input @input="debounceSearch" type="number" placeholder="Số tiền tối thiểu" x-model.number="minCredit" class="p-1 border border-gray-300 rounded w-1/6">
-      <input @input="debounceSearch" type="number" placeholder="Số tiền tối đa" x-model.number="maxCredit" class="p-1 border border-gray-300 rounded w-1/6">
-      
+      <div class="w-full sm:w-3/6 flex gap-2">
+        <div class="relative w-full">
+          <input @input="debounceSearch" type="number" min="0" placeholder="Số tiền tối thiểu" x-model.number="minCredit"
+            class="p-1 w-full pl-10 border border-gray-300 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+          <!-- Heroicon dollar icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute top-1/2 left-3 h-5 w-5 transform -translate-y-1/2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
+          </svg>
+          <!-- Nút X để xóa nội dung -->
+          <button x-show="minCredit" @click="minCredit = null; debounceSearch();" class="absolute top-1/2 right-3 h-5 w-5 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <!-- Heroicon X icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="relative w-full">
+          <input @input="debounceSearch" type="number" min="0" placeholder="Số tiền tối đa" x-model.number="maxCredit"
+            class="p-1 w-full pl-10 border border-gray-300 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+          <!-- Heroicon dollar icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute top-1/2 left-3 h-5 w-5 transform -translate-y-1/2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
+          </svg>
+          <!-- Nút X để xóa nội dung -->
+          <button x-show="maxCredit" @click="maxCredit = null; debounceSearch();" class="absolute top-1/2 right-3 h-5 w-5 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <!-- Heroicon X icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="flex flex-col md:flex-row md:flex-row-reverse justify-between mb-2">
+      <div class="flex space-x-2 justify-between items-center">  
+        <div class="mb-2 font-semibold w-full flex gap-2">
+          <!-- Chọn sắp xếp -->
+          <select x-model="sortBy" @change="performSearch" class="p-1 border border-gray-300 rounded w-full">
+            <option value="">Sắp xếp theo...</option>
+            <option value="TNX Date">Ngày GD</option>
+            <option value="Credit">Số tiền</option>
+          </select>
+  
+          <!-- Chọn thứ tự sắp xếp -->
+          <select x-model="sortDirection" @change="performSearch" class="p-1 border border-gray-300 rounded w-full">
+            <option value="asc">Tăng dần</option>
+            <option value="desc">Giảm dần</option>
+          </select>
+        </div>
+      </div>
+  
+      <!-- Tổng số tiền giao dịch -->
+      <div class="mb-2 font-semibold">
+        Tổng số tiền: <span x-text="totalCredit"></span> VND
+      </div>
     </div>
 
     <!-- Hiển thị khi đang tải dữ liệu -->
     <div x-show="loading" class="text-center text-gray-500 mb-2">Đang tải dữ liệu...</div>
 
-    <!-- Tổng số tiền giao dịch -->
-    
-    <div class="flex space-x-2 mb-2 justify-between">
-      <div class="mb-2 font-semibold">
-        Tổng số tiền: <span x-text="totalCredit"></span> VND
-      </div>
-      <div class="mb-2 font-semibold">
-        <!-- Chọn sắp xếp -->
-        <select x-model="sortBy" @change="performSearch" class="p-1 border border-gray-300 rounded">
-          <option value="">Sắp xếp theo...</option>
-          <option value="TNX Date">Ngày GD</option>
-          <option value="Credit">Số tiền</option>
-        </select>
-
-        <!-- Chọn thứ tự sắp xếp -->
-        <select x-model="sortDirection" @change="performSearch" class="p-1 border border-gray-300 rounded">
-          <option value="asc">Tăng dần</option>
-          <option value="desc">Giảm dần</option>
-        </select>
-      </div>
-    </div>
-
     <!-- Bảng hiển thị kết quả với tiêu đề cố định -->
-    <div class="overflow-auto max-h-full mb-4 flex-grow">
+    <div x-ref="tableContainer" x-show="!loading" class="overflow-auto max-h-full mb-2 flex-grow">
       <table class="min-w-full bg-white border-collapse text-sm">
         <thead class="bg-gray-200 sticky top-0 z-10">
           <tr class="text-left font-bold">
@@ -64,13 +152,13 @@
         </thead>
         <tbody>
           <template x-for="(row, index) in paginatedResults" :key="index">
-            <tr class="hover:bg-gray-100">
-              <td class="px-1 py-1 border" x-html="highlight(row['Doc No'])"></td>
-              <td class="px-1 py-1 border" x-text="row['TNX Date']"></td>
-              <td class="px-1 py-1 border text-right" x-text="formatCredit(row['Credit'])"></td>
-              <td class="px-1 py-1 border" x-html="highlight(row['Transactions in detail'])"></td>
-              <td class="px-1 py-1 border text-center">
-                <button @click="copyToClipboard(row)" class="bg-blue-500 text-white px-1 py-1 rounded whitespace-nowrap">Sao chép</button>
+            <tr class="hover:bg-blue-100" :class="{'bg-gray-50': index % 2 === 1}">
+              <td class="px-1 py-1 border align-top" x-html="highlight(row['Doc No'])"></td>
+              <td class="px-1 py-1 border align-top" x-text="row['TNX Date']"></td>
+              <td class="px-1 py-1 border align-top text-right" x-text="formatCredit(row['Credit'])"></td>
+              <td class="px-1 py-1 border align-top" x-html="highlight(row['Transactions in detail'])"></td>
+              <td class="px-1 py-1 border align-top text-center">
+                <button @click="copyToClipboard(row)" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 text-sm px-2 py-0 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 px-2 py-0 rounded-full whitespace-nowrap">Sao chép</button>
               </td>
             </tr>
           </template>
@@ -88,16 +176,21 @@
     </div>
 
     <!-- Điều khiển phân trang -->
-    <div class="flex justify-between items-center mt-4">
+    <div x-show="!loading" class="flex justify-between items-center">
       <button @click="prevPage" :disabled="currentPage === 1"
-        class="bg-gray-300 text-gray-700 px-2 py-1 rounded-lg disabled:opacity-50">
+        class="text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 px-2 py-1 rounded-full disabled:opacity-50">
         Trang trước
       </button>
       <span class="text-md">Trang <span x-text="currentPage"></span> / <span x-text="totalPages"></span></span>
       <button @click="nextPage" :disabled="currentPage === totalPages"
-        class="bg-gray-300 text-gray-700 px-2 py-1 rounded-lg disabled:opacity-50">
+        class="text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 px-2 py-1 rounded-full disabled:opacity-50">
         Trang sau
       </button>
+    </div>
+
+    <div class="italic font-normal text-xs text-center mt-2">
+      Lưu ý: Dữ liệu chỉ trong phạm vi từ 1/9/2024 đến 10/9/2024. Chúng tôi sẽ cập nhật khi có dữ liệu mới.
+      <a href="https://www.facebook.com/thongtinchinhphu/posts/pfbid027QC8dzUuNEPWSFYdMPfyLkmbDaMMYM5JbNmz3bSBzDoXdnmNnuYFtjruy6txSQcnl" target="_blank" class="text-blue-600 font-bold">Xem dữ liệu gốc tại đây</a>
     </div>
   </div>
 
@@ -116,6 +209,7 @@
         totalCredit: 0,
         minCredit: null,
         maxCredit: null,
+        filterVisible: true, // Control filter visibility
 
         init() {
           this.loading = true;
@@ -137,6 +231,10 @@
           });
         },
 
+        toggleFilters() {
+          this.filterVisible = !this.filterVisible;
+        },
+
         formatCredit(value) {
           if (!value) return value;
           const number = parseFloat(value.replace(/,/g, ''));  // Xử lý chuỗi số tiền
@@ -150,7 +248,7 @@
         },
 
         calculateTotalCredit() {
-          this.totalCredit = this.csvData.reduce((sum, row) => {
+          this.totalCredit = this.filteredResults.reduce((sum, row) => {
             const value = parseFloat((row['Credit'] ?? '0').replace(/,/g, ''));
             return sum + (isNaN(value) ? 0 : value);
           }, 0).toLocaleString();
@@ -184,31 +282,36 @@
         }, 500),
 
         performSearch() {
-          const lowerQuery = this.query.toLowerCase();
-          this.filteredResults = this.csvData.filter(row => {
-            if (!row['Doc No']) {
-              return false;
-            }
-            const credit = parseFloat((row['Credit'] ?? '0').replace(/,/g, '')) || 0;
-            // console.log({
-            //   credit,
-            //   minCredit: this.minCredit,
-            //   maxCredit: this.maxCredit,
-            //   lowerQuery: lowerQuery
-            // })
+          this.loading = true;
+          try {
+            const lowerQuery = this.query.toLowerCase();
+            this.filteredResults = this.csvData.filter(row => {
+              if (!row['Doc No']) {
+                return false;
+              }
+              const credit = parseFloat((row['Credit'] ?? '0').replace(/,/g, '')) || 0;
+              // console.log({
+              //   credit,
+              //   minCredit: this.minCredit,
+              //   maxCredit: this.maxCredit,
+              //   lowerQuery: lowerQuery
+              // })
 
-            return (this.minCredit === null || credit >= this.minCredit) && (this.maxCredit === null || credit <= this.maxCredit)
-               && 
-              (
-                  row['Doc No']?.toLowerCase().includes(lowerQuery) ||
-                  row['Transactions in detail']?.toLowerCase().includes(lowerQuery)
-              )
-          });
-          console.log(this.filteredResults.length)
+              return (this.minCredit === null || credit >= this.minCredit) && (this.maxCredit === null || credit <= this.maxCredit)
+                && 
+                (
+                    row['Doc No']?.toLowerCase().includes(lowerQuery) ||
+                    row['Transactions in detail']?.toLowerCase().includes(lowerQuery)
+                )
+            });
+            console.log(this.filteredResults.length)
 
-          this.currentPage = 1;
-          this.calculateTotalCredit();
-          this.updatePagination();
+            this.currentPage = 1;
+            this.calculateTotalCredit();
+            this.updatePagination();
+          } finally {
+            this.loading = false;
+          }
         },
 
         copyToClipboard(row) {
@@ -231,6 +334,8 @@
           if (this.currentPage < this.totalPages) {
             this.currentPage++;
             this.updatePagination();
+            // Scroll to top when changing pages
+            this.$refs.tableContainer.scrollTop = 0
           }
         },
 
@@ -238,6 +343,8 @@
           if (this.currentPage > 1) {
             this.currentPage--;
             this.updatePagination();
+            // Scroll to top when changing pages
+            this.$refs.tableContainer.scrollTop = 0
           }
         }
       };
