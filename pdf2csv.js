@@ -25,7 +25,7 @@ pdf(dataBuffer).then(function(data) {
     // Create a writable stream for the CSV file
     const writer = fs.createWriteStream(outputCsvPath);
     // Write the header of the CSV file
-    writer.write('TNX Date, Doc No, Credit, Transactions in detail\n');
+    writer.write('TNX Date,Doc No,Credit,Transactions in detail\n');
 
     // Regular expressions for matching specific patterns:
     // 1. Date format (dd/mm/yyyy)
@@ -72,7 +72,7 @@ pdf(dataBuffer).then(function(data) {
             // Check if the line matches the amount pattern and set the amount
             const parts = line.trim().split(' ');
             if (parts.length > 0) {
-                amount = parts[0];  // Set the first part as the transaction amount
+                amount = parts[0].replace('.', '');  // Set the first part as the transaction amount
             } else {
                 recordValid = false;  // If no valid amount, mark the record as invalid
             }

@@ -1,1 +1,137 @@
-hello
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV Search with Pagination</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-900 min-h-screen w-full h-screen">
+  <div x-data="csvSearch()" x-init="init()" class="container mx-auto mt-10 p-4 h-full flex flex-col">
+    <h1 class="text-3xl font-bold mb-4">Search Transactions</h1>
+
+    <!-- Search input -->
+    <div class="flex space-x-2 mb-4">
+      <input type="text" placeholder="Search by Doc No or Transactions in detail..." x-model="query"
+        class="w-full p-2 border border-gray-300 rounded-lg">
+      <button @click="performSearch" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Search</button>
+    </div>
+
+    <!-- Table to display results with sticky header -->
+    <div class="overflow-auto max-h-full mb-4 flex-grow">
+      <table class="min-w-full bg-white border-collapse">
+        <thead class="bg-gray-200 sticky top-0 z-10">
+          <tr class="text-left font-bold">
+            <th class="p-2 border">TNX Date</th>
+            <th class="p-2 border">Doc No</th>
+            <th class="p-2 border">Credit</th>
+            <th class="p-2 border">Transactions in detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="(row, index) in paginatedResults" :key="index">
+            <tr class="hover:bg-gray-100">
+              <td class="p-2 border" x-text="row['TNX Date']"></td>
+              <td class="p-2 border" x-text="row['Doc No']"></td>
+              <td class="p-2 border" x-text="row['Credit']"></td>
+              <td class="p-2 border" x-text="row['Transactions in detail']"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination controls -->
+    <div class="flex justify-between items-center mt-4">
+      <button @click="prevPage" :disabled="currentPage === 1"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg disabled:opacity-50">
+        Previous
+      </button>
+      <span class="text-lg">Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span></span>
+      <button @click="nextPage" :disabled="currentPage === totalPages"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg disabled:opacity-50">
+        Next
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function csvSearch() {
+      return {
+        query: '',
+        csvData: [],
+        filteredResults: [],
+        paginatedResults: [],
+        currentPage: 1,
+        itemsPerPage: 100,
+
+        init() {
+          // Hardcoded CSV URL
+          const csvUrl = 'https://raw.githubusercontent.com/godwork1192/yagi-check-var/main/data/thong_tin_ung_ho_qua_tsk_vcb_0011001932418_tu_01_09_den10_09_2024.csv';
+
+          // Load and parse the CSV file
+          Papa.parse(csvUrl, {
+            download: true,
+            header: true,
+            transformHeader: function (h) {
+              return h.trim();
+            },
+            complete: (results) => {
+              console.log(results.data)
+              this.csvData = results.data;
+              this.filteredResults = this.csvData;  // Initially show full data
+              this.updatePagination();  // Initialize pagination
+            }
+          });
+        },
+
+        get totalPages() {
+          return Math.ceil(this.filteredResults.length / this.itemsPerPage);
+        },
+
+        updatePagination() {
+          // Update paginated results based on the current page
+          const start = (this.currentPage - 1) * this.itemsPerPage;
+          const end = start + this.itemsPerPage;
+          this.paginatedResults = this.filteredResults.slice(start, end);
+        },
+
+        performSearch() {
+          // Filter the data based on the query when the "Search" button is clicked
+          if (this.query === '') {
+            this.filteredResults = this.csvData;  // If query is empty, show all
+          } else {
+            const lowerQuery = this.query.toLowerCase();
+            this.filteredResults = this.csvData.filter(row => {
+              console.log({ row })
+              return row['Doc No'].toLowerCase().includes(lowerQuery) ||
+                row['Transactions in detail'].toLowerCase().includes(lowerQuery);
+            });
+          }
+          this.currentPage = 1;  // Reset to first page after search
+          this.updatePagination();  // Update pagination based on filtered results
+        },
+
+        nextPage() {
+          if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.updatePagination();
+          }
+        },
+
+        prevPage() {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+            this.updatePagination();
+          }
+        }
+      };
+    }
+  </script>
+</body>
+
+</html>
